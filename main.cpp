@@ -287,6 +287,9 @@ bool menu_main() {
     // Clear the terminal to start off with
     clear_terminal();
 
+    // Spacer
+    std::cout << std::endl;
+
     // Print main menu header with blue and bold
     std::cout << Style.BLU << Style.BOL;
     std::cout << R"(  _                       _                _____           _                  )" << std::endl;
