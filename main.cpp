@@ -1,8 +1,11 @@
 #include <iostream>     // For terminal i/o
 #include <cstdlib>      // To run system commands (clear/cls)
+#include <limits>       // Used in wait_enter() to clear line
 
 #include <iomanip>      // To convert epoch to readable format
 #include <ctime>        // To get system time
+
+#include <cmath>        // To round numbers
 
 #include <vector>       // For lists
 #include <string>       // For string manipulation
@@ -72,15 +75,13 @@ void sleep(int ms) {
 // Helper function to wait for enter key press
 void wait_enter() {
 
-    // Ignore all chars except from enter
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
+    // Wait for key press
     std::cin.get();
 
 }
 
 // Helper function to get current time in epoch format
-int current_epoch_time() {
+std::time_t current_epoch_time() {
 
     // Return current time in epoch
     return std::time(nullptr);
@@ -126,7 +127,7 @@ public:
             csv_file.open(csv_file_path);
 
             // Write the header to the csv file
-            csv_file << header;
+            csv_file << header << std::endl;
 
         }
 
@@ -136,20 +137,20 @@ public:
     }
 
     // Function to write to file
-    void write(std::string date, std::string start_time, std::string stop_time, std::string hours_worked, std::string total_pay, std::string description) {
+    void write(std::string& date, std::string& start_time, std::string& stop_time, double hours_worked, double total_pay, std::string& description) {
 
         // Open file
-        csv_file.open(csv_file_path);
+        csv_file.open(csv_file_path, std::ios_base::app);
 
         // Write the row of date to it.
-        csv_file << date << "," << start_time << "," << stop_time << "," << hours_worked << "," << total_pay << "," << description;
+        csv_file << date << "," << start_time << "," << stop_time << "," << hours_worked << "," << total_pay << "," << description << std::endl;
 
         csv_file.close();
 
     }
 
 };
-csv CSV;
+csv Csv;
 
 // Config file class
 class config {
@@ -231,7 +232,6 @@ int menu_main() {
     std::cout << R"(              |___/ |___/         |___/          |___/                        )" << std::endl;
     std::cout << R"(                                                                              )" << std::endl;
     std::cout << Style.END;
-        
 
     // If block to switch clock-on and clock-off options respectfully
     std::vector<std::string> menu_items;
@@ -258,6 +258,7 @@ int menu_main() {
     std::cout << "Select an Option " << Style.BLU << "-> " << Style.END;
     int choice;
     std::cin >> choice;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
     // Run the selected option
     switch (choice) {
@@ -307,7 +308,8 @@ void clock_on() {
     std::cout << "Date: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%D") << Style.END << std::endl;
     std::cout << "Time: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%H:%M:%S") << Style.END << std::endl;
 
-    std::cout << Style.ITA << Style.GRE << "Press ENTER key to return" << Style.END << std::endl;
+    std::cout << Style.ITA << Style.GRE << "Press ENTER key to return" << Style.END;
+
     wait_enter();
 
 }
@@ -315,9 +317,57 @@ void clock_on() {
 // Clock off function
 void clock_off() {
 
-    clear_terminal();
+    // Print message
+    std::cout << Style.GRE << Style.ITA << "Clocking Off..." << Style.END << std::endl;
 
-    std::cout << "Clocked off";
+    // Save clocked off time
+    User.clocked_off_epoch = current_epoch_time();
+
+    // Ask user for shift desc
+    std::cout << "Shift Notes " << Style.BLU << "-> " << Style.END;
+    std::string shift_desc;
+    std::getline(std::cin, shift_desc);
+
+    // Calc duration in hours of how long shift was
+    std::time_t duration = User.clocked_off_epoch - User.clocked_on_epoch;
+
+    double hours_worked = std::round((static_cast<double>(duration) / 3600.0) * 100.0) / 100.0;
+
+    // Calc total pay
+    double total_pay = std::round((hours_worked * User.hourly_pay) * 100.0) / 100.0;
+
+    // Set date
+    std::string date = convert_epoch(User.clocked_on_epoch, "%d/%m/%Y");
+
+    // Get start time
+    std::string start_time = convert_epoch(User.clocked_on_epoch, "%H:%M:%S");
+
+    // Get stop time
+    std::string stop_time = convert_epoch(User.clocked_off_epoch, "%H:%M:%S");
+
+    // Finnally write all the data to the csv
+    Csv.write(
+        date,
+        start_time,
+        stop_time,
+        hours_worked,
+        total_pay,
+        shift_desc
+    );
+
+    // Shift is now complete
+    User.clocked_on = 0;
+    User.clocked_on_epoch = 0;
+    User.clocked_off_epoch = 0;
+    Config.save();
+
+    // Print success message
+    std::cout << Style.GRE << Style.ITA << "Successfully clocked off" << Style.END << std::endl;
+    std::cout << "Hours Worked:  " << Style.BLU << hours_worked << Style.END << std::endl;
+    std::cout << "Total Pay:     " << Style.BLU << "$" << total_pay << Style.END;
+
+    wait_enter();
+
 
 }
 
