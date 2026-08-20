@@ -70,7 +70,11 @@ style Style;
 // Helper function to clear screen
 void clear_terminal() {
 
-    std::system("clear");
+    #ifdef _WIN32
+        std::system("cls");
+    #else
+        std::system("clear");
+    #endif
 
 }
 
@@ -197,7 +201,7 @@ public:
         csv_file.open(csv_file_path, std::ios_base::app);
 
         // Write the row of date to it.
-        csv_file << date << "," << start_time << "," << stop_time << "," << hours_worked << "," << total_pay << "," << description << std::endl;
+        csv_file << date << "," << start_time << "," << stop_time << "," << hours_worked << "," << total_pay << "," << "\"" << description << "\"" << std::endl;
 
         csv_file.close();
 
@@ -243,7 +247,7 @@ public:
         while (std::getline(config_file, line)) {
             
             // Get the equal sign index
-            int equal_sign = line.find("=");
+            std::size_t equal_sign = line.find('=');
 
             // If the equals sign isn't found then exit out of while loop
             if (equal_sign == std::string::npos) {continue;}
@@ -260,7 +264,7 @@ public:
             } else if (key == "clocked_off_epoch") {
                 User.clocked_off_epoch = std::stoll(val);
             } else if (key == "hourly_pay") {
-                User.hourly_pay = std::stof(val);
+                User.hourly_pay = std::stod(val);
             } else if (key == "shifts_worked") {
                 User.shifts_worked = std::stoi(val);
             } else if (key == "total_hours_worked") {
@@ -278,7 +282,7 @@ public:
 config Config;
 
 // Main menu function
-int menu_main() {
+bool menu_main() {
 
     // Clear the terminal to start off with
     clear_terminal();
@@ -354,15 +358,15 @@ int menu_main() {
             msg("Exiting", "info", true);
 
             // Return 0
-            return 0;
+            return false;
             
         // Else user inputs invalid option
         default:
             msg("Invalid Option", "error", true);
-            return 1;
+            return true;
     }
 
-    return 1;
+    return true;
 
 }
 
@@ -408,7 +412,7 @@ void clock_off() {
     std::cout << " Shift Notes " << Style.BLU << "-> " << Style.END;
     std::string shift_desc;
     std::getline(std::cin, shift_desc);
-
+    
     // Hide cursor
     std::cout << Style.CRH;
 
@@ -588,10 +592,10 @@ int main() {
 
     // Main loop
     // menu_main will return 0 if to re-loop or 1 to exit the application
-    int exit_code;
-    while (exit_code != 0) {
+    bool running = true;
+    while (running) {
 
-        exit_code = menu_main();
+        running = menu_main();
 
     }
     
