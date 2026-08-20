@@ -170,7 +170,7 @@ private:
 
     // Private vars (can only be accessed within class)
     const std::string header = "Date,Start Time,Stop Time,Hours Worked,Total Pay($),Description";
-    const std::string csv_file_path = "./loggedwork.csv";
+    const std::string csv_file_path = "./loggedhours.csv";
     std::ofstream csv_file;
 
 public:
