@@ -40,7 +40,7 @@ data User;
 // A struct for acsi styles
 struct style {
 
-
+    // Functional
     std::string END = "\033[0m";
 
     // Colours
@@ -54,6 +54,10 @@ struct style {
     // Graphics
     std::string BOL = "\033[1m";
     std::string ITA = "\033[3m";
+
+    // Cursors
+    std::string CRH = "\033[?25l";
+    std::string CRS = "\033[?25h";
 
 };
 style Style;
@@ -111,7 +115,7 @@ class csv {
 private:
 
     // Private vars (can only be accessed within class)
-    const std::string header = "Date,Start Time,Stop Time,Hours Worked,Total Pay,Description";
+    const std::string header = "Date,Start Time,Stop Time,Hours Worked,Total Pay($),Description";
     const std::string csv_file_path = "./loggedwork.csv";
     std::ofstream csv_file;
 
@@ -283,7 +287,7 @@ int menu_main() {
         
     // Else user inputs invalid option
     default:
-        std::cout << "Invalid Option." << std::flush;
+        std::cout << Style.RED << "Invalid Option." << Style.END << std::flush;
         sleep(1000);
         return 1;
     }
@@ -294,6 +298,9 @@ int menu_main() {
 
 // Clock on function
 void clock_on() {
+
+    // Hide cursor
+    std::cout << Style.CRH;
 
     // Set some varibles
     User.clocked_on_epoch = current_epoch_time();
@@ -308,9 +315,12 @@ void clock_on() {
     std::cout << "Date: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%D") << Style.END << std::endl;
     std::cout << "Time: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%H:%M:%S") << Style.END << std::endl;
 
-    std::cout << Style.ITA << Style.GRE << "Press ENTER key to return" << Style.END;
+    std::cout << Style.ITA << Style.GRE << "Press ENTER to return" << Style.END;
 
     wait_enter();
+
+    // Show cursor
+    std::cout << Style.CRS;
 
 }
 
@@ -327,6 +337,9 @@ void clock_off() {
     std::cout << "Shift Notes " << Style.BLU << "-> " << Style.END;
     std::string shift_desc;
     std::getline(std::cin, shift_desc);
+
+    // Hide cursor
+    std::cout << Style.CRH;
 
     // Calc duration in hours of how long shift was
     std::time_t duration = User.clocked_off_epoch - User.clocked_on_epoch;
@@ -364,10 +377,13 @@ void clock_off() {
     // Print success message
     std::cout << Style.GRE << Style.ITA << "Successfully clocked off" << Style.END << std::endl;
     std::cout << "Hours Worked:  " << Style.BLU << hours_worked << Style.END << std::endl;
-    std::cout << "Total Pay:     " << Style.BLU << "$" << total_pay << Style.END;
+    std::cout << "Total Pay:     " << Style.BLU << "$" << total_pay << Style.END << std::endl;
+    std::cout << Style.ITA << Style.GRE << "Press ENTER to return" << Style.END;
 
     wait_enter();
 
+    // Show cursor
+    std::cout << Style.CRS;
 
 }
 
