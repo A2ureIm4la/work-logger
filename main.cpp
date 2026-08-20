@@ -21,7 +21,7 @@
 struct data {  
 
     // Clocked on/off state 
-    bool clocked_on = false;
+    int clocked_on = 0;
     
     // Epoch times of clocked on/off
     std::time_t clocked_on_epoch = 0;
@@ -66,6 +66,16 @@ void clear_terminal() {
 void sleep(int ms) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+
+}
+
+// Helper function to wait for enter key press
+void wait_enter() {
+
+    // Ignore all chars except from enter
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    std::cin.get();
 
 }
 
@@ -159,14 +169,49 @@ public:
         config_file << "clocked_on=" << User.clocked_on << std::endl;
         config_file << "clocked_on_epoch=" << User.clocked_on_epoch << std::endl;
         config_file << "clocked_off_epoch=" << User.clocked_off_epoch << std::endl;
-        config_file << "hourly_pay" << User.hourly_pay << std::endl; 
+        config_file << "hourly_pay=" << User.hourly_pay << std::endl; 
 
     }
 
-    void load()
+    // Function to load values from the config file to the user struct
+    void load() {
+
+        std::ifstream config_file(config_file_path);
+
+        // If no config file yet return
+        if (!config_file) {return;}
+
+        std::string line;
+        while (std::getline(config_file, line)) {
+            
+            // Get the equal sign index
+            int equal_sign = line.find("=");
+
+            // If the equals sign isn't found then exit out of while loop
+            if (equal_sign == std::string::npos) {continue;}
+
+            // Get key and value pairs relative to the equals sign
+            std::string key = line.substr(0, equal_sign);
+            std::string val = line.substr(equal_sign + 1);
+
+            // Update the user struct with the new values, converting values at need
+            if (key == "clocked_on") { 
+                User.clocked_on = std::stoi(val);
+            } else if (key == "clocked_on_epoch") {
+                User.clocked_on_epoch = std::stoll(val);
+            } else if (key == "clocked_off_epoch") {
+                User.clocked_off_epoch = std::stoll(val);
+            } else if (key == "hourly_pay") {
+                User.hourly_pay = std::stof(val);
+            }
 
 
-}
+        }
+
+    }
+
+};
+config Config;
 
 // Main menu function
 int menu_main() {
@@ -190,7 +235,7 @@ int menu_main() {
 
     // If block to switch clock-on and clock-off options respectfully
     std::vector<std::string> menu_items;
-    if (User.clocked_on == false) {
+    if (User.clocked_on == 0) {
         menu_items = {"Clock On", "Stats", "Exit"};
     } else {
         menu_items = {"Clock Off", "Stats", "Exit"};
@@ -220,7 +265,7 @@ int menu_main() {
     // Clock on/off
     case 1:
         
-        if (User.clocked_on == false) {clock_on();} else {clock_off();}
+        if (User.clocked_on == 0) {clock_on();} else {clock_off();}
         break;
     
     // Stats page
@@ -249,22 +294,21 @@ int menu_main() {
 // Clock on function
 void clock_on() {
 
-    // Set the clocked on var to the current time
+    // Set some varibles
     User.clocked_on_epoch = current_epoch_time();
-
-    // Set the clocked on status to true
-    User.clocked_on = true;
+    User.clocked_off_epoch = 0;
+    User.clocked_on = 1;
 
     // Save status to file
     Config.save();
-    //Config.load();
 
     // Output success message
     std::cout << Style.GRE << Style.ITA << "Successfully clocked in" << Style.END << std::endl;
     std::cout << "Date: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%D") << Style.END << std::endl;
     std::cout << "Time: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%H:%M:%S") << Style.END << std::endl;
 
-    sleep(4000);
+    std::cout << Style.ITA << Style.GRE << "Press ENTER key to return" << Style.END << std::endl;
+    wait_enter();
 
 }
 
@@ -289,7 +333,10 @@ void show_stats() {
 }
 
 // Main entry point
-int main() {
+int main() {        
+
+    // Load config values into user struct
+    Config.load();
 
     // Main loop
     // menu_main will return 0 if to re-loop or 1 to exit the application
