@@ -21,7 +21,7 @@
 #include "main.h"       // Include header file
 
 // A struct to keep important values that need to be accessed globally
-struct data {  
+struct user {  
 
     // Clocked on/off state 
     int clocked_on = 0;
@@ -31,11 +31,16 @@ struct data {
     std::time_t clocked_off_epoch = 0;
 
     // Pay rate
-    float hourly_pay = 20.0f;
+    double hourly_pay = 20.00;
+
+    // Stats
+    int shifts_worked = 0;
+    double total_hours_worked = 0;
+    double total_pay = 0;
 
 };
 // Declare the user struct
-data User;
+user User;
 
 // A struct for acsi styles
 struct style {
@@ -84,6 +89,39 @@ void wait_enter() {
 
 }
 
+// Helper function to print styled message to terminal
+void msg(std::string message, std::string type, bool newline_encase) {
+
+    // Print newline after message 
+    if (newline_encase) {std::cout << std::endl;}
+
+    // Find what type it print
+    if (type == "error") {
+        
+        // Message encased in red flags
+        std::cout << Style.RED << "[!] " << Style.END << message << Style.RED << " [!]" << Style.END << std::endl;
+        sleep(1500);
+
+    } else if (type == "info") {
+        
+        // Message encased in yellow flags
+        std::cout << Style.YEL << "[!] " << Style.END << message << Style.YEL << " [!]" << Style.END << std::endl;
+
+    } else if (type == "success") {
+
+        // Message encased in green flags
+        std::cout << Style.GRE << "[!] " << Style.END << message << Style.GRE << " [!]" << Style.END << std::endl;
+
+    }
+
+
+    // Print newline after message 
+    if (newline_encase) {std::cout << std::endl;}
+
+    return;
+
+}
+
 // Helper function to get current time in epoch format
 std::time_t current_epoch_time() {
 
@@ -107,6 +145,18 @@ std::string convert_epoch(std::time_t epoch, std::string params) {
 
     // Return the formatted epoch time
     return formatted_time;
+
+}
+
+// Helper function to update stats
+void update_stats(int shifts_worked, double total_hours_worked, double total_pay) {
+
+    // Update each entry in user struct 
+    User.shifts_worked += shifts_worked;
+    User.total_hours_worked += total_hours_worked;
+    User.total_pay += total_pay;
+
+    return;
 
 }
 
@@ -175,6 +225,9 @@ public:
         config_file << "clocked_on_epoch=" << User.clocked_on_epoch << std::endl;
         config_file << "clocked_off_epoch=" << User.clocked_off_epoch << std::endl;
         config_file << "hourly_pay=" << User.hourly_pay << std::endl; 
+        config_file << "shifts_worked=" << User.shifts_worked << std::endl;
+        config_file << "total_hours_worked=" << User.total_hours_worked << std::endl;
+        config_file << "total_pay=" << User.total_pay << std::endl;
 
     }
 
@@ -208,6 +261,12 @@ public:
                 User.clocked_off_epoch = std::stoll(val);
             } else if (key == "hourly_pay") {
                 User.hourly_pay = std::stof(val);
+            } else if (key == "shifts_worked") {
+                User.shifts_worked = std::stoi(val);
+            } else if (key == "total_hours_worked") {
+                User.total_hours_worked = std::stod(val);
+            } else if (key == "total_pay") {
+                User.total_pay = std::stod(val);
             }
 
 
@@ -240,9 +299,9 @@ int menu_main() {
     // If block to switch clock-on and clock-off options respectfully
     std::vector<std::string> menu_items;
     if (User.clocked_on == 0) {
-        menu_items = {"Clock On", "Stats", "Exit"};
+        menu_items = {"Clock On", "Stats", "Settings"};
     } else {
-        menu_items = {"Clock Off", "Stats", "Exit"};
+        menu_items = {"Clock Off", "Stats", "Settings"};
     }
 
     // Print the menu items
@@ -250,10 +309,14 @@ int menu_main() {
     for (std::string& item : menu_items) {
 
         // Print item to terminal with an index
-        std::cout << Style.BLU << "[" << count << "] " << Style.END << item << std::endl;
+        std::cout << Style.BLU << " [" << count << "] " << Style.END << item << std::endl;
         count++;
 
     }
+
+    // Print exit with custom index
+    std::cout << Style.BOL << Style.RED << " [" << "0" << "] " << "Exit" <<  Style.END << std::endl;
+
 
     // Spacer
     std::cout << std::endl;
@@ -267,29 +330,36 @@ int menu_main() {
     // Run the selected option
     switch (choice) {
     
-    // Clock on/off
-    case 1:
+        // Clock on/off
+        case 1:
+            
+            if (User.clocked_on == 0) {clock_on();} else {clock_off();}
+            break;
         
-        if (User.clocked_on == 0) {clock_on();} else {clock_off();}
-        break;
-    
-    // Stats page
-    case 2:
+        // Stats page
+        case 2:
 
-        show_stats();
-        break;
-    
-    // Exit
-    case 3:
-
-        // Return 0
-        return 0;
+            show_stats();
+            break;
         
-    // Else user inputs invalid option
-    default:
-        std::cout << Style.RED << "Invalid Option." << Style.END << std::flush;
-        sleep(1000);
-        return 1;
+        // Settings
+        case 3:
+            
+            settings();
+            break;
+        
+        // Exit
+        case 0:
+            
+            msg("Exiting", "info", true);
+
+            // Return 0
+            return 0;
+            
+        // Else user inputs invalid option
+        default:
+            msg("Invalid Option", "error", true);
+            return 1;
     }
 
     return 1;
@@ -311,11 +381,12 @@ void clock_on() {
     Config.save();
 
     // Output success message
-    std::cout << Style.GRE << Style.ITA << "Successfully clocked in" << Style.END << std::endl;
-    std::cout << "Date: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%D") << Style.END << std::endl;
-    std::cout << "Time: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%H:%M:%S") << Style.END << std::endl;
+    msg("Clocking In", "info", true);
 
-    std::cout << Style.ITA << Style.GRE << "Press ENTER to return" << Style.END;
+    std::cout << " Date: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%D") << Style.END << std::endl;
+    std::cout << " Time: " << Style.BLU << convert_epoch(User.clocked_on_epoch, "%H:%M:%S") << Style.END << std::endl;
+
+    msg("Press ENTER to return", "info", true);
 
     wait_enter();
 
@@ -328,13 +399,13 @@ void clock_on() {
 void clock_off() {
 
     // Print message
-    std::cout << Style.GRE << Style.ITA << "Clocking Off..." << Style.END << std::endl;
+    msg("Clocking Off", "info", true);
 
     // Save clocked off time
     User.clocked_off_epoch = current_epoch_time();
 
     // Ask user for shift desc
-    std::cout << "Shift Notes " << Style.BLU << "-> " << Style.END;
+    std::cout << " Shift Notes " << Style.BLU << "-> " << Style.END;
     std::string shift_desc;
     std::getline(std::cin, shift_desc);
 
@@ -350,7 +421,7 @@ void clock_off() {
     double total_pay = std::round((hours_worked * User.hourly_pay) * 100.0) / 100.0;
 
     // Set date
-    std::string date = convert_epoch(User.clocked_on_epoch, "%d/%m/%Y");
+    std::string date = convert_epoch(User.clocked_on_epoch, "%c");
 
     // Get start time
     std::string start_time = convert_epoch(User.clocked_on_epoch, "%H:%M:%S");
@@ -368,6 +439,9 @@ void clock_off() {
         shift_desc
     );
 
+    // Call the stats update
+    update_stats(1, hours_worked, total_pay);
+
     // Shift is now complete
     User.clocked_on = 0;
     User.clocked_on_epoch = 0;
@@ -375,10 +449,10 @@ void clock_off() {
     Config.save();
 
     // Print success message
-    std::cout << Style.GRE << Style.ITA << "Successfully clocked off" << Style.END << std::endl;
-    std::cout << "Hours Worked:  " << Style.BLU << hours_worked << Style.END << std::endl;
-    std::cout << "Total Pay:     " << Style.BLU << "$" << total_pay << Style.END << std::endl;
-    std::cout << Style.ITA << Style.GRE << "Press ENTER to return" << Style.END;
+    msg("Successfully Clocked Off", "success", true);
+    std::cout << " Hours Worked:  " << Style.BLU << hours_worked << Style.END << std::endl;
+    std::cout << " Total Pay:     " << Style.BLU << "$" << total_pay << Style.END << std::endl;
+    msg("Press ENTER to Return", "info", true);
 
     wait_enter();
 
@@ -390,11 +464,119 @@ void clock_off() {
 // Show stats function
 void show_stats() {
 
-    clear_terminal();
+    // Hide cursor
+    std::cout << Style.CRH;
 
-    std::cout << "stat page" << std::flush;
+    // Space line
+    std::cout << std::endl;
 
-    sleep(1000);
+    // Print stats
+    std::cout << "--------< " << Style.BLU << "STATS" << Style.END << " >--------" << std::endl;
+    std::cout << " Shifts Worked " << Style.BLU << " ->  " << Style.END << User.shifts_worked << std::endl;
+    std::cout << " Hours Worked  " << Style.BLU << " ->  " << Style.END << User.total_hours_worked << std::endl;
+    std::cout << " Total Pay     " << Style.BLU << " ->  " << Style.END << "$" << User.total_pay << std::endl;
+
+    msg("Press ENTER to Return", "info", true);    
+
+    wait_enter();
+
+    std::cout << Style.CRS;
+
+}
+
+// Settings function
+void settings() {
+
+    // Spacer
+    std::cout << std::endl;
+
+    // Print setting options
+    std::vector<std::string> menu_items = {
+        "Hourly Pay",
+        "Wipe Data"
+    };
+    int count = 1;
+    for (std::string& item : menu_items) {
+
+        // Print item to terminal with an index
+        std::cout << Style.BLU << " [" << count << "] " << Style.END << item << std::endl;
+        count++;
+
+    }
+
+    std::cout << Style.RED << Style.BOL << " [" << "0" << "] " << "Return" << Style.END << std::endl;
+
+    // Spacer
+    std::cout << std::endl;
+
+    // Get the users choice
+    std::cout << "Select a Setting to Run/Edit" << Style.BLU << "-> " << Style.END;
+    int choice;
+    std::cin >> choice;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    // Spacer
+    std::cout << std::endl;
+
+    // Runt the selected choice
+    switch (choice) {
+
+        // Hourly pay edit
+        case 1:
+
+            // Print current value and new value
+            std::cout << " Current Value " << Style.BLU << "-> " << Style.END << User.hourly_pay << std::endl;
+            std::cout << " New Value     " << Style.BLU << "-> " << Style.END;
+            
+            // Promt use for new value
+            double new_value;
+            std::cin >> new_value;
+
+            // Save the new value
+            User.hourly_pay = new_value;
+
+            Config.save();
+
+            // Display success message
+            msg("Value Successfully Set", "success", true);
+
+            sleep(1500);
+
+            return;
+
+        // Wipe data
+        case 2:
+
+            // Print are you sure message
+            std::cout << " Wipe all data? " << Style.BLU << "[y/n] -> " << Style.END;
+            char choice;
+            std::cin >> choice;
+
+            // Exit if no
+            if (choice == 'n') {return;}
+
+            // Print are you sure sure message
+            std::cout << " Are you sure? " << Style.BLU << "[y/n] -> " << Style.END;
+            std::cin >> choice;
+
+            // Exit if no
+            if (choice == 'n') {return;}
+
+            // Wipe all data
+            std::filesystem::remove("config.cfg");
+            std::filesystem::remove("loggedwork.csv");
+
+            msg("Data Wiped", "info", true);
+
+            sleep(1500);
+
+            return;
+
+        // Return
+        case 0:
+            return;
+
+    }
 
 }
 
