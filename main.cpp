@@ -290,19 +290,18 @@ bool menu_main() {
     // Spacer
     std::cout << std::endl;
 
-    // Print main menu header with blue and bold
     std::cout << Style.BLU << Style.BOL;
-    std::cout << R"(  _                       _                _____           _                  )" << std::endl;
-    std::cout << R"( | |                     (_)              / ____|         | |                 )" << std::endl;
-    std::cout << R"( | |     ___   __ _  __ _ _ _ __   __ _  | (___  _   _ ___| |_ ___ _ __ ___   )" << std::endl;
-    std::cout << R"( | |    / _ \ / _` |/ _` | | '_ \ / _` |  \___ \| | | / __| __/ _ \ '_ ` _ \  )" << std::endl;
-    std::cout << R"( | |___| (_) | (_| | (_| | | | | | (_| |  ____) | |_| \__ \ ||  __/ | | | | | )" << std::endl;
-    std::cout << R"( |______\___/ \__, |\__, |_|_| |_|\__, | |_____/ \__, |___/\__\___|_| |_| |_| )" << std::endl;
-    std::cout << R"(               __/ | __/ |         __/ |          __/ |                       )" << std::endl;
-    std::cout << R"(              |___/ |___/         |___/          |___/                        )" << std::endl;
-    std::cout << R"(                                                                              )" << std::endl;
+    std::cout << R"( __          __        _        _                                  )" << std::endl;
+    std::cout << R"( \ \        / /       | |      | |                                 )" << std::endl;
+    std::cout << R"(  \ \  /\  / /__  _ __| | __   | |     ___   __ _  __ _  ___ _ __  )" << std::endl;
+    std::cout << R"(   \ \/  \/ / _ \| '__| |/ /   | |    / _ \ / _` |/ _` |/ _ \ '__| )" << std::endl;
+    std::cout << R"(    \  /\  / (_) | |  |   <    | |___| (_) | (_| | (_| |  __/ |    )" << std::endl;
+    std::cout << R"(     \/  \/ \___/|_|  |_|\_\   |______\___/ \__, |\__, |\___|_|    )" << std::endl;
+    std::cout << R"(                                             __/ | __/ |           )" << std::endl;
+    std::cout << R"(                                            |___/ |___/            )" << std::endl;
+    std::cout << R"(                                                                   )" << std::endl;
     std::cout << Style.END;
-
+   
     // If block to switch clock-on and clock-off options respectfully
     std::vector<std::string> menu_items;
     if (User.clocked_on == 0) {
