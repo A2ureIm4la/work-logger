@@ -38,9 +38,7 @@ struct user {
     double total_hours_worked = 0;
     double total_pay = 0;
 
-};
-// Declare the user struct
-user User;
+} User;
 
 // A struct for acsi styles
 struct style {
@@ -55,6 +53,7 @@ struct style {
     std::string BLU = "\033[34m";
     std::string MAG = "\033[35m";
     std::string CYA = "\033[36m";
+    std::string WHI = "\033[37m";
 
     // Graphics
     std::string BOL = "\033[1m";
@@ -207,8 +206,7 @@ public:
 
     }
 
-};
-csv Csv;
+} Csv;
 
 // Config file class
 class config {
@@ -278,8 +276,7 @@ public:
 
     }
 
-};
-config Config;
+} Config;
 
 // Main menu function
 bool menu_main() {
@@ -305,9 +302,9 @@ bool menu_main() {
     // If block to switch clock-on and clock-off options respectfully
     std::vector<std::string> menu_items;
     if (User.clocked_on == 0) {
-        menu_items = {"Clock On", "Stats", "Settings"};
+        menu_items = {Style.BOL + Style.WHI + "Clock On" + Style.END, "Stats", "Settings"};
     } else {
-        menu_items = {"Clock Off", "Stats", "Settings"};
+        menu_items = {Style.BOL + Style.WHI + "Clock Off" + Style.END, "Stats", "Settings"};
     }
 
     // Print the menu items
@@ -477,15 +474,17 @@ void show_stats() {
     std::cout << std::endl;
 
     // Print stats
-    std::cout << "--------< " << Style.BLU << "STATS" << Style.END << " >--------" << std::endl;
+    std::cout << " --------< " << Style.BLU << "STATS" << Style.END << " >--------" << std::endl;
     std::cout << " Shifts Worked " << Style.BLU << " ->  " << Style.END << User.shifts_worked << std::endl;
     std::cout << " Hours Worked  " << Style.BLU << " ->  " << Style.END << User.total_hours_worked << std::endl;
     std::cout << " Total Pay     " << Style.BLU << " ->  " << Style.END << "$" << User.total_pay << std::endl;
+    std::cout << " -------------------------" << std::endl;
 
     msg("Press ENTER to Return", "info", true);    
 
     wait_enter();
 
+    // Show cursor
     std::cout << Style.CRS;
 
 }
