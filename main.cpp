@@ -171,7 +171,7 @@ private:
     // Private vars (can only be accessed within class)
     const std::string header = "Date,Start Time,Stop Time,Hours Worked,Total Pay($),Description";
     const std::string csv_file_path = "./loggedhours.csv";
-    std::ofstream csv_file;
+    std::fstream csv_file;
 
 public:
 
@@ -182,7 +182,7 @@ public:
         if (!std::filesystem::exists(csv_file_path)) {
 
             // Create and open the csv file
-            csv_file.open(csv_file_path);
+            csv_file.open(csv_file_path, std::ios_base::out);
 
             // Write the header to the csv file
             csv_file << header << std::endl;
