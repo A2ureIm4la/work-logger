@@ -569,7 +569,7 @@ void settings() {
 
             // Wipe all data
             std::filesystem::remove("config.cfg");
-            std::filesystem::remove("loggedwork.csv");
+            std::filesystem::remove("loggedhours.csv");
 
             msg("Data Wiped", "info", true);
 
