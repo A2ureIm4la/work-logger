@@ -18,6 +18,9 @@
 #include <fstream>      // File manipulation
 #include <filesystem>   // Check for present files
 
+#include <cstdio>       // For gnureadline
+#include <readline/readline.h>
+
 #include "main.h"       // Include header file
 
 // A struct to keep important values that need to be accessed globally
@@ -407,10 +410,9 @@ void clock_off() {
     // Save clocked off time
     User.clocked_off_epoch = current_epoch_time();
 
-    // Ask user for shift desc
-    std::cout << " Shift Notes " << Style.BLU << "-> " << Style.END;
-    std::string shift_desc;
-    std::getline(std::cin, shift_desc);
+    // Ask user for shift desc using gnureadline for inline editing
+    char* result = readline((" Shift Notes" + Style.BLU + " -> " + Style.END).c_str());
+    std::string shift_desc = result;
     
     // Hide cursor
     std::cout << Style.CRH;
